@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNTF — Train Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2330;
+    --green: #00e676;
+    --green-dim: #00e67622;
+    --orange: #ff9800;
+    --orange-dim: #ff980022;
+    --red: #ff3d3d;
+    --blue: #3d9aff;
+    --blue-dim: #3d9aff18;
+    --text: #e8eaf0;
+    --muted: #5a6080;
+    --accent: #00e676;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: #000;
+    letter-spacing: 0;
+  }
+
+  .logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .live-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 2px;
+  }
+
+  /* MAIN */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-bar input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .search-bar input:focus { border-color: var(--green); }
+  .search-bar input::placeholder { color: var(--muted); }
+
+  /* FILTER PANEL */
+  .filter-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .filter-group label {
+    display: block;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border 0.2s;
+    appearance: none;
+  }
+
+  .filter-group select:focus,
+  .filter-group input:focus { border-color: var(--blue); }
+
+  .filter-group input::placeholder { color: var(--muted); }
+
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    font-weight: 600;
+  }
+
+  .btn-primary:hover { background: #00ff88; transform: translateY(-1px); }
+
+  .btn-search {
+    background: var(--blue);
+    color: #fff;
+  }
+
+  .btn-search:hover { background: #60b4ff; transform: translateY(-1px); }
+
+  /* DIVIDER */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  /* LINE CARDS */
+  .line-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .line-card:hover { border-color: #2a3040; }
+
+  .line-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .line-code {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--green);
+    letter-spacing: 2px;
+    background: var(--green-dim);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #00e67640;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  .route {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .city {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .route-arrow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+    flex: 1;
+    max-width: 120px;
+  }
+
+  .route-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--muted), transparent);
+  }
+
+  .route-tip {
+    width: 6px; height: 6px;
+    border-top: 1px solid var(--muted);
+    border-right: 1px solid var(--muted);
+    transform: rotate(45deg);
+    margin-left: -4px;
+  }
+
+  .trip-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* TRIPS */
+  .trips-body { padding: 1rem 1.4rem; display: flex; flex-direction: column; gap: 10px; }
+
+  .trip-row {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 16px;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .trip-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .trip-row.Normal::before { background: var(--muted); }
+  .trip-row.Rapid::before { background: var(--orange); }
+  .trip-row.Express::before { background: var(--blue); }
+  .trip-row.Coradia::before { background: #c678ff; }
+
+  .trip-row:hover { background: var(--surface2); }
+
+  .trip-meta { display: flex; flex-direction: column; gap: 4px; }
+
+  .trip-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .trip-type {
+    display: inline-block;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .type-Normal { background: #ffffff12; color: #aaa; }
+  .type-Rapid { background: var(--orange-dim); color: var(--orange); }
+  .type-Express { background: var(--blue-dim); color: var(--blue); }
+  .type-Coradia { background: #c678ff18; color: #c678ff; }
+
+  .schedule {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .schedule-sep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .sched-line {
+    width: 40px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .days-row {
+    display: flex;
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .day-chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .day-chip.active {
+    background: var(--green-dim);
+    color: var(--green);
+    border-color: #00e67640;
+  }
+
+  .classes {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+  }
+
+  .class-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    min-width: 120px;
+    justify-content: space-between;
+  }
+
+  .class-type {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .class-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .class-price span {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .filter-panel { grid-template-columns: 1fr 1fr; }
+    .trip-row { grid-template-columns: 1fr; gap: 10px; }
+    .classes { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">S</div>
+    <div>
+      <div class="logo-text">SNTF</div>
+      <div class="logo-sub">Réseau Ferroviaire National</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-dot"></div>
+    <div class="live-label">LIVE</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Search by trip code -->
+  <form action="/search" method="GET" class="search-bar">
+    <input name="code" placeholder="Chercher un trip par code (ex: T101, T302 ...)" autocomplete="off">
+    <button type="submit" class="btn btn-search">Rechercher</button>
+  </form>
+
+  <!-- Filter form -->
+  <form action="/filter" method="GET" class="filter-panel">
+    <div class="filter-group">
+      <label>Départ</label>
+      <select name="departure">
+        <option value="">Toutes les villes</option>
+        {% for w in wilayas %}
+        <option value="{{ w }}">{{ w }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Arrivée</label>
+      <select name="arrival">
+        <option value="">Toutes les villes</option>
+        {% for w in wilayas %}
+        <option value="{{ w }}">{{ w }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Type de train</label>
+      <select name="type">
+        <option value="">Tous les types</option>
+        {% for t in trains %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Prix max (DA)</label>
+      <input name="max_price" type="number" placeholder="ex: 1500">
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+    </div>
+  </form>
+
+  <div class="section-label">Résultats</div>
+
+  {% if not lines %}
+  <div class="empty">
+    <div class="empty-icon">🚉</div>
+    <p>Aucun résultat trouvé</p>
+  </div>
+  {% endif %}
+
+  {% for line in lines %}
+  <div class="line-card">
+    <div class="line-header">
+      <div class="line-code">{{ line.code }}</div>
+      <div class="route">
+        <span class="city">{{ line.departure }}</span>
+        <div class="route-arrow">
+          <div class="route-line"></div>
+          <div class="route-tip"></div>
+        </div>
+        <span class="city">{{ line.arrival }}</span>
+      </div>
+      <div class="trip-count">{{ line.trips|length }} voyage{% if line.trips|length > 1 %}s{% endif %}</div>
+    </div>
+
+    <div class="trips-body">
+      {% for trip in line.trips %}
+      {% set all_days = ['mon','tue','wed','thu','fri','sat','sun'] %}
+      {% set trip_days = trip.days.split(',') if trip.days else [] %}
+      <div class="trip-row {{ trip.type }}">
+
+        <div class="trip-meta">
+          <div class="trip-code">{{ trip.code }}</div>
+          <div class="trip-type type-{{ trip.type }}">{{ trip.type }}</div>
+          <div class="days-row">
+            {% for d in all_days %}
+            <div class="day-chip {% if d in trip_days %}active{% endif %}">{{ d[:2] }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="schedule">
+          <div>
+            <div class="time">{{ trip.departure_time }}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;">DÉPART</div>
+          </div>
+          <div class="schedule-sep">
+            <div class="sched-line"></div>
+            🚆
+            <div class="sched-line"></div>
+          </div>
+          <div>
+            <div class="time">{{ trip.arrival_time }}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;">ARRIVÉE</div>
+          </div>
+        </div>
+
+        <div class="classes">
+          {% for c in trip.classes %}
+          <div class="class-badge">
+            <span class="class-type">{{ c.type }}</span>
+            <span class="class-price">{{ c.price }}<span> DA</span></span>
+          </div>
+          {% endfor %}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+</main>
+</body>
+</html>
