@@ -32,9 +32,7 @@ def home():
     wilayas = sorted(list(wilayas))
     trains = sorted(list(trains))
 
-    print("Wilayas:", wilayas)
-    print("Trains:", trains)
-    return render_template("index.html", wilayas=wilayas, trains=trains, lines=lines)
+    return render_template("index.html", wilayas=wilayas, trains=trains, lines=lines, stats=None)
 
 
 @app.route('/filter')
@@ -96,40 +94,81 @@ def filter():
                     ]
                 }]
             })
-    return render_template('index.html', lines=lines, wilayas=wilayas, trains=trains)
+
+    return render_template('index.html', lines=lines, wilayas=wilayas, trains=trains, stats=None)
 
 
-def count_trips_per_type():
-    counts = {}
-    for trip in root.findall('.//trip'):
-        t = trip.get('type')
-        if t not in counts:
-            counts[t] = 0
-        counts[t] += 1
-
-
-def price_stats():
-    stats = {}
+def get_statistics():
+    """
+    Uses ElementTree to compute:
+    - Cheapest and most expensive trip (by min price) per line
+    - Number of trips per train type
+    """
+    # --- Price stats per line (cheapest & most expensive) ---
+    price_stats = {}
     for line in root.findall('.//line'):
         line_code = line.get('code')
-        prices = []
-        for trip in line.find('trips').findall('trip'):
-            for c in trip.findall('class'):
-                prices.append(float(c.get('price')))
+        dep = stations.get(line.get('departure'), line.get('departure'))
+        arr = stations.get(line.get('arrival'), line.get('arrival'))
 
-        if prices:
-            stats[line_code] = {
-                "min": min(prices),
-                "max": max(prices)
+        trip_min_prices = []  # (min_price, trip_code) for each trip
+        for trip in line.find('trips').findall('trip'):
+            prices = [float(c.get('price')) for c in trip.findall('class')]
+            if prices:
+                trip_min_prices.append((min(prices), trip.get('code')))
+
+        if trip_min_prices:
+            cheapest = min(trip_min_prices, key=lambda x: x[0])
+            most_expensive = max(trip_min_prices, key=lambda x: x[0])
+            price_stats[line_code] = {
+                "route": f"{dep} → {arr}",
+                "cheapest_price": cheapest[0],
+                "cheapest_trip": cheapest[1],
+                "expensive_price": most_expensive[0],
+                "expensive_trip": most_expensive[1],
             }
 
-    return stats
+    # --- Trips count per train type ---
+    type_counts = {}
+    for trip in root.findall('.//trip'):
+        t = trip.get('type')
+        type_counts[t] = type_counts.get(t, 0) + 1
+
+    return {
+        "price_stats": price_stats,
+        "type_counts": type_counts
+    }
+
+
+@app.route('/stats')
+def stats_page():
+    wilayas = set()
+    trains = set()
+    for line in root.findall('.//line'):
+        wilayas.add(stations.get(line.get('departure'), line.get('departure')))
+        wilayas.add(stations.get(line.get('arrival'), line.get('arrival')))
+        for trip in line.find('trips').findall('trip'):
+            trains.add(trip.get('type'))
+    wilayas = sorted(list(wilayas))
+    trains = sorted(list(trains))
+    stats = get_statistics()
+    return render_template('index.html', lines=[], wilayas=wilayas, trains=trains, stats=stats, show_stats=True)
 
 
 @app.route('/search')
 def search():
     code = request.args.get('code')
     trips = doc.getElementsByTagName("trip")
+    wilayas = set()
+    trains = set()
+    for line in root.findall('.//line'):
+        wilayas.add(stations.get(line.get('departure'), line.get('departure')))
+        wilayas.add(stations.get(line.get('arrival'), line.get('arrival')))
+        for trip in line.find('trips').findall('trip'):
+            trains.add(trip.get('type'))
+    wilayas = sorted(list(wilayas))
+    trains = sorted(list(trains))
+
     for trip in trips:
         if trip.getAttribute("code") == code:
             schedule = trip.getElementsByTagName("schedule")[0]
@@ -139,7 +178,6 @@ def search():
             arr_id = line_elem.getAttribute("arrival")
             dep_name = stations.get(dep_id, dep_id)
             arr_name = stations.get(arr_id, arr_id)
-            print("schedule:", schedule.getAttribute("departure"))
             return render_template('index.html', lines=[{
                 "code": line_elem.getAttribute("code"),
                 "departure": dep_name,
@@ -158,8 +196,8 @@ def search():
                     ],
                     "days": trip.getAttribute("days")
                 }]
-            }])
-    return render_template('index.html', lines=[])
+            }], wilayas=wilayas, trains=trains, stats=None)
+    return render_template('index.html', lines=[], wilayas=wilayas, trains=trains, stats=None)
 
 
 def load_all_data():

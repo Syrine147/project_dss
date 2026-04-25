@@ -83,8 +83,19 @@
   .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
   }
+
+  .nav-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--green); }
 
   .live-dot {
     width: 8px; height: 8px;
@@ -473,11 +484,139 @@
     letter-spacing: 0;
   }
 
+  /* ======= STATISTICS SECTION ======= */
+  .stats-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .stat-card-header {
+    background: var(--surface2);
+    padding: 0.8rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  .stat-card-body {
+    padding: 1rem 1.2rem;
+  }
+
+  /* Type count badges */
+  .type-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .type-count-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    min-width: 90px;
+  }
+
+  .type-count-badge .tc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .type-count-badge .tc-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .tc-Normal { color: #aaa; border-color: #aaa3; }
+  .tc-Rapid  { color: var(--orange); border-color: var(--orange-dim); }
+  .tc-Express { color: var(--blue); border-color: #3d9aff30; }
+  .tc-Coradia { color: #c678ff; border-color: #c678ff30; }
+
+  /* Price stats table */
+  .price-stat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .price-stat-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .price-stat-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .price-stat-table tr:last-child td { border-bottom: none; }
+
+  .price-stat-table td .line-tag {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .cheap-val {
+    color: #00e676;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .exp-val {
+    color: var(--orange);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .trip-ref {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
   /* RESPONSIVE */
   @media (max-width: 768px) {
     .filter-panel { grid-template-columns: 1fr 1fr; }
     .trip-row { grid-template-columns: 1fr; gap: 10px; }
     .classes { align-items: flex-start; }
+    .stats-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -492,6 +631,7 @@
     </div>
   </div>
   <div class="header-right">
+    <a href="/stats" class="nav-link">Statistiques</a>
     <div class="live-dot"></div>
     <div class="live-label">LIVE</div>
   </div>
@@ -542,6 +682,65 @@
       <button type="submit" class="btn btn-primary">Filtrer</button>
     </div>
   </form>
+
+  <!-- ===== STATISTICS PANEL ===== -->
+  {% if stats %}
+  <div class="stats-section">
+    <div class="section-label">Statistiques (ElementTree)</div>
+    <div class="stats-grid">
+
+      <!-- Trips per type -->
+      <div class="stat-card">
+        <div class="stat-card-header">🚆 Nombre de voyages par type</div>
+        <div class="stat-card-body">
+          <div class="type-counts">
+            {% for type, count in stats.type_counts.items() %}
+            <div class="type-count-badge tc-{{ type }}">
+              <div class="tc-label">{{ type }}</div>
+              <div class="tc-num">{{ count }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Price stats per line -->
+      <div class="stat-card">
+        <div class="stat-card-header">💰 Prix min / max par ligne</div>
+        <div class="stat-card-body">
+          <table class="price-stat-table">
+            <thead>
+              <tr>
+                <th>Ligne</th>
+                <th>Route</th>
+                <th>Moins cher</th>
+                <th>Plus cher</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for code, s in stats.price_stats.items() %}
+              <tr>
+                <td><span class="line-tag">{{ code }}</span></td>
+                <td style="color:var(--muted);font-size:11px;">{{ s.route }}</td>
+                <td>
+                  <div class="cheap-val">{{ s.cheapest_price|int }} DA</div>
+                  <div class="trip-ref">{{ s.cheapest_trip }}</div>
+                </td>
+                <td>
+                  <div class="exp-val">{{ s.expensive_price|int }} DA</div>
+                  <div class="trip-ref">{{ s.expensive_trip }}</div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+  <!-- ===== END STATISTICS ===== -->
 
   <div class="section-label">Résultats</div>
 
